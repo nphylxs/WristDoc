@@ -11,7 +11,7 @@ import SwiftUI
 struct WristDocApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HealthChartsView()
         }
     }
 }
