@@ -67,39 +67,51 @@ struct HealthChartsView: View {
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Health Summary")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        Text("Last 5 Days")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
+            // 1. Use a ZStack to layer views. The gradient will be the bottom layer.
+            ZStack {
+                // 2. Define the gradient.
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.green.opacity(0.4)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea() // 3. Make the gradient fill the entire screen, including safe areas.
 
-                    // Chart Cards
-                    HeartRateCard(data: healthData)
-                    SleepCard(data: healthData)
-                    TemperatureCard(data: healthData)
-                    
-                    // AI Summary Card
-                    AISummaryCard(summary: $aiSummary, isLoading: $isLoadingSummary) {
-                        // Action to perform when button is tapped
-                        Task {
-                            await generateAISummary()
+                // Your original ScrollView goes on top of the gradient.
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Health Summary")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                            Text("Last 5 Days")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+
+                        // Chart Cards
+                        HeartRateCard(data: healthData)
+                        SleepCard(data: healthData)
+                        TemperatureCard(data: healthData)
+                        
+                        // AI Summary Card
+                        AISummaryCard(summary: $aiSummary, isLoading: $isLoadingSummary) {
+                            Task {
+                                await generateAISummary()
+                            }
                         }
                     }
+                    .padding(.vertical)
                 }
-                .padding(.vertical)
+                // 4. We remove the old background color from the ScrollView so the gradient shows through.
             }
-            .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
         }
     }
+    
     
     // Function to generate AI summary
     func generateAISummary() async {
@@ -201,7 +213,7 @@ struct ChartCard<Content: View>: View {
             content.frame(minHeight: 200)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -245,7 +257,7 @@ struct AISummaryCard: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .cornerRadius(12)
         .padding(.horizontal)
     }
