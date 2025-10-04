@@ -1,22 +1,3 @@
-// MARK: - AI Integration Overview
-//
-// This file now includes a feature to generate an AI-powered health summary.
-//
-// 1. AI Summary Card: A new UI component has been added to the main screen.
-//    - It contains a button to trigger the AI analysis.
-//    - It includes a text area to display the generated report and a loading indicator.
-//
-// 2. generateAISummary() Function:
-//    - This asynchronous function is called when the "Generate Report" button is tapped.
-//    - It formats the user's sample health data into a detailed prompt.
-//    - The prompt instructs the AI model to act as a medical professional and create a
-//      concise summary for a doctor, highlighting trends and notable data points.
-//    - It makes a network request to the generative AI API.
-//
-// 3. State Management:
-//    - @State variables (`aiSummary`, `isLoadingSummary`) are used to manage the UI,
-//      showing a loading state while fetching the summary and displaying the text once it's received.
-
 import SwiftUI
 import Charts
 
