@@ -79,17 +79,15 @@ struct HealthChartsView: View {
 
                 // Your original ScrollView goes on top of the gradient.
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 12) {
                         // Header
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Health Summary")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                            Text("Last 5 Days")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Image("Header")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 100)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.horizontal)
 
                         // Chart Cards
@@ -139,7 +137,7 @@ struct HealthChartsView: View {
         }.joined(separator: "\n")
         
         let systemPrompt = "You are a helpful medical assistant. Analyze the following daily health data for a patient. Provide a concise, professional summary for a doctor, written in bullet points. Highlight any notable trends, potential concerns, or patterns in resting heart rate, sleep duration, and wrist temperature."
-        let userPrompt = "Here is the patient's health data for the last 5 days:\n\(dataString) Keep in mind that this summary is going to be printed as it is, so don't start the review with any phrase like 'Here is your summary' or 'Got it'. Also, don't use any formatting that isn't compatible with Swift."
+        let userPrompt = "Here is the patient's health data for the last 5 days:\n\(dataString) Keep in mind that this summary is going to be printed as it is, so don't start the review with any phrase like 'Here is your summary' or 'Got it'. Also, don't use any formatting that involves asterisks and isn't compatible with Swift."
 
         let payload: [String: Any] = [
             "contents": [
