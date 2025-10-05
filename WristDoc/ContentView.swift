@@ -1,12 +1,194 @@
 import SwiftUI
 import Charts
 
-// MARK: - App Entry Point
 @main
-struct WristDocApp: App {
+struct MyApp: App {
     var body: some Scene {
         WindowGroup {
+            NavBarView() // This must be the root view
+        }
+    }
+}
+struct NavBarView: View {
+    var body: some View {
+        TabView {
             HealthChartsView()
+                .tabItem {
+                    Label("Book", systemImage: "book.fill")
+                }
+
+            ProfileView()
+                .tabItem {
+                    Label("Profile", systemImage: "person.fill")
+                }
+
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom) // Optional: prevents keyboard from pushing the TabBar
+    }
+    struct HealthChartsView: View {
+        private let healthData = HealthDataPoint.sampleData
+        @State private var aiSummary: String = ""
+        @State private var isLoadingSummary: Bool = false
+        
+        // Structure for Gemini API response
+        struct GeminiResponse: Decodable {
+            struct Candidate: Decodable {
+                struct Content: Decodable {
+                    struct Part: Decodable {
+                        let text: String
+                    }
+                    let parts: [Part]
+                }
+                let content: Content
+            }
+            let candidates: [Candidate]
+        }
+
+        var body: some View {
+            NavigationView {
+                // 1. Use a ZStack to layer views. The gradient will be the bottom layer.
+                ZStack {
+                    // 2. Define the gradient.
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.green.opacity(0.4)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea() // 3. Make the gradient fill the entire screen, including safe areas.
+
+                    // Your original ScrollView goes on top of the gradient.
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            // Header
+                            VStack(alignment: .leading, spacing: 2) {
+                                Image("Header")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 100)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.horizontal)
+
+                            // Chart Cards
+                            HeartRateCard(data: healthData)
+                            SleepCard(data: healthData)
+                            TemperatureCard(data: healthData)
+                            
+                            // AI Summary Card
+                            AISummaryCard(summary: $aiSummary, isLoading: $isLoadingSummary) {
+                                Task {
+                                    await generateAISummary()
+                                }
+                            }
+                        }
+                        .padding(.vertical)
+                    }
+                    // 4. We remove the old background color from the ScrollView so the gradient shows through.
+                }
+                .navigationBarHidden(true)
+            }
+        }
+        
+        
+        // Function to generate AI summary
+        func generateAISummary() async {
+            await MainActor.run {
+                isLoadingSummary = true
+                aiSummary = ""
+            }
+
+            let apiKey = "AIzaSyBMrTMSpL7wKS0-wwsq3weOlg-5W-nmpHs"
+            let urlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=\(apiKey)"
+            
+            guard let url = URL(string: urlString) else {
+                await MainActor.run {
+                     aiSummary = "Error: Invalid URL"
+                     isLoadingSummary = false
+                }
+                return
+            }
+            
+            // Format the health data into a string for the prompt
+            let dataFormatter = DateFormatter()
+            dataFormatter.dateFormat = "MMM d"
+            let dataString = healthData.map { point in
+                "Date: \(dataFormatter.string(from: point.date)), Resting HR: \(String(format: "%.0f", point.restingHeartRate)) BPM, Sleep: \(String(format: "%.1f", point.sleepDuration)) hours, Wrist Temp Variance: \(String(format: "%+.2f", point.wristTemperatureVariance))°C"
+            }.joined(separator: "\n")
+            
+            let systemPrompt = "You are a helpful medical assistant. Analyze the following daily health data for a patient. Provide a concise, professional summary for a doctor, written in bullet points. Highlight any notable trends, potential concerns, or patterns in resting heart rate, sleep duration, and wrist temperature."
+            let userPrompt = "Here is the patient's health data for the last 5 days:\n\(dataString) Keep in mind that this summary is going to be printed as it is, so don't start the review with any phrase like 'Here is your summary' or 'Got it'. Also, don't use any formatting that involves asterisks and isn't compatible with Swift."
+
+            let payload: [String: Any] = [
+                "contents": [
+                    [
+                        "parts": [
+                            ["text": userPrompt]
+                        ]
+                    ]
+                ],
+                "systemInstruction": [
+                     "parts": [
+                        ["text": systemPrompt]
+                     ]
+                ]
+            ]
+            
+            do {
+                let body = try JSONSerialization.data(withJSONObject: payload)
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = body
+
+                let (data, _) = try await URLSession.shared.data(for: request)
+                let decodedResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
+                
+                if let text = decodedResponse.candidates.first?.content.parts.first?.text {
+                     await MainActor.run {
+                        aiSummary = text
+                     }
+                } else {
+                    await MainActor.run {
+                        aiSummary = "Could not generate a summary. Please try again."
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    aiSummary = "An error occurred: \(error.localizedDescription)"
+                }
+            }
+            
+            await MainActor.run {
+                isLoadingSummary = false
+            }
+        }
+    }
+
+}
+
+    
+struct ProfileView: View {
+    var body: some View {
+        VStack {
+            Text("Profile Screen")
+                .font(.largeTitle)
+                .padding()
+            Spacer()
+        }
+    }
+}
+
+struct SettingsView: View {
+    var body: some View {
+        VStack {
+            Text("Settings Screen")
+                .font(.largeTitle)
+                .padding()
+            Spacer()
         }
     }
 }
@@ -45,145 +227,7 @@ extension HealthDataPoint {
     }
 }
 
-// MARK: - Main View
-struct HealthChartsView: View {
-    private let healthData = HealthDataPoint.sampleData
-    @State private var aiSummary: String = ""
-    @State private var isLoadingSummary: Bool = false
-    
-    // Structure for Gemini API response
-    struct GeminiResponse: Decodable {
-        struct Candidate: Decodable {
-            struct Content: Decodable {
-                struct Part: Decodable {
-                    let text: String
-                }
-                let parts: [Part]
-            }
-            let content: Content
-        }
-        let candidates: [Candidate]
-    }
 
-    var body: some View {
-        NavigationView {
-            // 1. Use a ZStack to layer views. The gradient will be the bottom layer.
-            ZStack {
-                // 2. Define the gradient.
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.green.opacity(0.4)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea() // 3. Make the gradient fill the entire screen, including safe areas.
-
-                // Your original ScrollView goes on top of the gradient.
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // Header
-                        VStack(alignment: .leading, spacing: 2) {
-                            Image("Header")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 100)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.horizontal)
-
-                        // Chart Cards
-                        HeartRateCard(data: healthData)
-                        SleepCard(data: healthData)
-                        TemperatureCard(data: healthData)
-                        
-                        // AI Summary Card
-                        AISummaryCard(summary: $aiSummary, isLoading: $isLoadingSummary) {
-                            Task {
-                                await generateAISummary()
-                            }
-                        }
-                    }
-                    .padding(.vertical)
-                }
-                // 4. We remove the old background color from the ScrollView so the gradient shows through.
-            }
-            .navigationBarHidden(true)
-        }
-    }
-    
-    
-    // Function to generate AI summary
-    func generateAISummary() async {
-        await MainActor.run {
-            isLoadingSummary = true
-            aiSummary = ""
-        }
-
-        let apiKey = "AIzaSyBMrTMSpL7wKS0-wwsq3weOlg-5W-nmpHs"
-        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=\(apiKey)"
-        
-        guard let url = URL(string: urlString) else {
-            await MainActor.run {
-                 aiSummary = "Error: Invalid URL"
-                 isLoadingSummary = false
-            }
-            return
-        }
-        
-        // Format the health data into a string for the prompt
-        let dataFormatter = DateFormatter()
-        dataFormatter.dateFormat = "MMM d"
-        let dataString = healthData.map { point in
-            "Date: \(dataFormatter.string(from: point.date)), Resting HR: \(String(format: "%.0f", point.restingHeartRate)) BPM, Sleep: \(String(format: "%.1f", point.sleepDuration)) hours, Wrist Temp Variance: \(String(format: "%+.2f", point.wristTemperatureVariance))°C"
-        }.joined(separator: "\n")
-        
-        let systemPrompt = "You are a helpful medical assistant. Analyze the following daily health data for a patient. Provide a concise, professional summary for a doctor, written in bullet points. Highlight any notable trends, potential concerns, or patterns in resting heart rate, sleep duration, and wrist temperature."
-        let userPrompt = "Here is the patient's health data for the last 5 days:\n\(dataString) Keep in mind that this summary is going to be printed as it is, so don't start the review with any phrase like 'Here is your summary' or 'Got it'. Also, don't use any formatting that involves asterisks and isn't compatible with Swift."
-
-        let payload: [String: Any] = [
-            "contents": [
-                [
-                    "parts": [
-                        ["text": userPrompt]
-                    ]
-                ]
-            ],
-            "systemInstruction": [
-                 "parts": [
-                    ["text": systemPrompt]
-                 ]
-            ]
-        ]
-        
-        do {
-            let body = try JSONSerialization.data(withJSONObject: payload)
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = body
-
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let decodedResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
-            
-            if let text = decodedResponse.candidates.first?.content.parts.first?.text {
-                 await MainActor.run {
-                    aiSummary = text
-                 }
-            } else {
-                await MainActor.run {
-                    aiSummary = "Could not generate a summary. Please try again."
-                }
-            }
-        } catch {
-            await MainActor.run {
-                aiSummary = "An error occurred: \(error.localizedDescription)"
-            }
-        }
-        
-        await MainActor.run {
-            isLoadingSummary = false
-        }
-    }
-}
 
 // MARK: - Chart Card and Other Components
 struct ChartCard<Content: View>: View {
@@ -367,7 +411,7 @@ struct TemperatureCard: View {
 // MARK: - Preview Provider
 struct HealthChartsView_Previews: PreviewProvider {
     static var previews: some View {
-        HealthChartsView()
+        NavBarView()
             .preferredColorScheme(.dark)
     }
 }
