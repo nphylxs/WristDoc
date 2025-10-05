@@ -193,7 +193,7 @@ struct HealthChartsView: View {
         }.joined(separator: "\n")
         
         let systemPrompt = "You are a helpful medical assistant. Analyze the following daily health data for a patient. Provide a concise, professional summary for a doctor, written in bullet points. Highlight any notable trends, potential concerns, or patterns in resting heart rate, sleep duration, and wrist temperature. Do not use markdown like asterisks."
-        let userPrompt = "Here is the patient's health data for the last 5 days:\n\(dataString)"
+        let userPrompt = "Here is the patient's health data for the last 5 days:\n\(dataString) Also, please get straight to the point and start with the first bullet point, no need to say 'Got it' or 'Here is your summary'"
 
         let payload: [String: Any] = [
             "contents": [["parts": [["text": userPrompt]]]],
@@ -386,6 +386,7 @@ struct DoctorView: View {
 }
 
 struct doc_profiles: View {
+    @Environment(\.openURL) var openURL;
     let doctor: Doctor
     var body: some View {
         HStack {
@@ -401,7 +402,11 @@ struct doc_profiles: View {
                     .font(.headline)
                 Text(doctor.specialization)
             }
-            
+            Button("Book an appointment") {
+                if let url = URL(string: "https://www.apple.com") {
+                    openURL(url)
+                }
+            }
             
         }
         .padding()
