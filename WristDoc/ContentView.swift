@@ -77,7 +77,7 @@ struct NavBarView: View {
 
             DoctorView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Doctors", systemImage: "stethoscope")
                 }
         }
     }
@@ -175,7 +175,7 @@ struct HealthChartsView: View {
             aiSummary = ""
         }
 
-        let apiKey = "" // API key removed for security
+        let apiKey = "AIzaSyBMrTMSpL7wKS0-wwsq3weOlg-5W-nmpHs"
         let urlString = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=\(apiKey)"
         
         guard let url = URL(string: urlString) else {
@@ -351,10 +351,10 @@ struct Doctor: Identifiable {
 }
 
 let docs = [
-    Doctor(name: "Dr. John Doe", specialization: "Cardiology", headshot: "john.jpg"),
-    Doctor(name: "Dr. Jane Smith", specialization: "Dermatology", headshot: "jane.jpg"),
-    Doctor(name: "Dr. Emily Brown", specialization: "Pediatrics", headshot: "emily.jpg"),
-    Doctor(name: "Dr. David Wilson", specialization: "Neurology", headshot: "david.jpg")
+    Doctor(name: "Dr. John Doe", specialization: "Cardiology", headshot: "john"),
+    Doctor(name: "Dr. Jane Smith", specialization: "Dermatology", headshot: "jane"),
+    Doctor(name: "Dr. Emily Brown", specialization: "Pediatrics", headshot: "emily"),
+    Doctor(name: "Dr. David Wilson", specialization: "Neurology", headshot: "david")
 ]
 struct DoctorView: View {
     var body: some View {
@@ -401,6 +401,7 @@ struct doc_profiles: View {
                     .font(.headline)
                 Text(doctor.specialization)
             }
+            
             
         }
         .padding()
@@ -495,7 +496,7 @@ struct AISummaryCard: View {
                     .frame(maxWidth: .infinity, minHeight: 150)
             } else if summary.isEmpty {
                 Button(action: generateAction) {
-                    Text("Generate Doctor's Summary")
+                    Text("Generate AI Summary")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -622,7 +623,7 @@ struct TemperatureCard: View {
 // MARK: - Preview Provider
 struct HealthChartsView_Previews: PreviewProvider {
     static var previews: some View {
-        DoctorView()
+        NavBarView()
             .preferredColorScheme(.dark)
     }
 }
