@@ -159,6 +159,20 @@ struct HealthChartsView: View {
 
 // MARK: - Placeholder Screens
 struct ProfileView: View {
+    
+    @State private var name: String = "John Doe"
+    @State private var dob: Date = Calendar.current.date(from: DateComponents(year: 1990, month: 1, day: 1)) ?? Date()
+    @State private var weight: Double = 70.0 // in kg
+    @State private var height: Double = 170.0 // in cm
+    @State private var isEditing: Bool = false
+    
+    var age: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let ageComponents = calendar.dateComponents([.year], from: dob, to: now)
+        return ageComponents.year ?? 0
+    }
+    
     var body: some View {
         ZStack {
             LinearGradient(
@@ -167,15 +181,94 @@ struct ProfileView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-            
-            Text("Profile Screen")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
+            VStack{
+                VStack(alignment: .leading, spacing:20) {
+                    Text("Profile")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .topLeading ) // Keep title centered
+                    VStack(spacing:0) {
+                        
+                    }
+                    
+                    if isEditing {
+                        HStack {
+                            Text("Name:")
+                            TextField("", text: $name)
+                                .textFieldStyle(DefaultTextFieldStyle())
+                                .foregroundColor(.white)
+                                .border(Color.white.opacity(0.3), width: 1)
+                        }
+                        
+                        
+                        DatePicker("DOB", selection: $dob, displayedComponents: .date)
+                            .foregroundColor(.white)
+                            .scaledToFit()
+                        
+                        HStack {
+                            Text("Weight (kg):")
+                            TextField("", value: $weight, format: .number)
+                                .textFieldStyle(DefaultTextFieldStyle())
+                                .keyboardType(.decimalPad)
+                                .border(Color.white.opacity(0.3), width: 1)
+                        }
+                        .foregroundColor(.white)
+                        
+                        HStack {
+                            Text("Height (cm):")
+                            TextField("", value: $height, format: .number)
+                                .textFieldStyle(DefaultTextFieldStyle())
+                                .keyboardType(.decimalPad)
+                                .border(Color.white.opacity(0.3), width: 1)
+                        }
+                        .foregroundColor(.white)
+                    } else {
+                        Text("Name: \(name)")
+                            .foregroundColor(.white)
+                        
+                        Text("DOB: \(dob, formatter: dateFormatter)")
+                            .foregroundColor(.white)
+                        
+                        Text("Age: \(age)")
+                            .foregroundColor(.white)
+                        
+                        Text("Weight: \(weight, specifier: "%.1f") kg")
+                            .foregroundColor(.white)
+                        
+                        Text("Height: \(height, specifier: "%.1f") cm")
+                            .foregroundColor(.white)
+                    }
+                    
+                    Button(action: {
+                        isEditing.toggle()
+                    }) {
+                        Text(isEditing ? "Save" : "Edit")
+                            .font(.subheadline)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.3))
+                            .cornerRadius(8)
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading) // Align button to left
+                }
+                .padding()
+                Spacer()
+            }
         }
-    }
+        }
+    
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
+    }()
 }
 
+#Preview {
+    ProfileView()
+}
 struct SettingsView: View {
     var body: some View {
         ZStack {
