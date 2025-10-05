@@ -1,7 +1,57 @@
 import SwiftUI
 import Charts
+import UIKit
+import CoreImage.CIFilterBuiltins
+//QR Code maker
+struct QRCodeView: View {
+    let reportString: String
+    
+    // Generates the QR Code image from the report string.
+    private func generateQRCode(from string: String) -> UIImage {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
 
-// MARK: - App Entry Point
+        // Improve QR code quality by scaling it up
+        if let outputImage = filter.outputImage {
+            if let cgimg = context.createCGImage(outputImage, from: outputImage.extent) {
+                return UIImage(cgImage: cgimg)
+            }
+        }
+
+        return UIImage(systemName: "xmark.circle") ?? UIImage()
+    }
+
+    var body: some View {
+        ZStack {
+            // Background to match the app's theme
+            Color(.systemGroupedBackground).edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 24) {
+                Text("Scan to Share Report")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                // Generate and display the QR Code
+                Image(uiImage: generateQRCode(from: reportString))
+                    .resizable()
+                    .interpolation(.none) // Keeps the QR code sharp
+                    .scaledToFit()
+                    .frame(width: 250, height: 250)
+                    .padding()
+                    .background(.white)
+                    .cornerRadius(12)
+
+                Text("Open the camera on another device and point it at this code.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+            .padding()
+        }
+    }
+}// MARK: - App Entry Point
 @main
 struct MyApp: App {
     var body: some Scene {
@@ -39,7 +89,27 @@ struct HealthChartsView: View {
     private let healthData = HealthDataPoint.sampleData
     @State private var aiSummary: String = ""
     @State private var isLoadingSummary: Bool = false
+    @State private var isShowingQR = false
     
+    private var shareableReport: String {
+        var report = "Health Summary Report\n---------------------\n\n"
+        let dataFormatter = DateFormatter()
+        dataFormatter.dateFormat = "EEEE, MMM d"
+        
+        for point in healthData {
+            report += "\(dataFormatter.string(from: point.date)):\n"
+            report += "  - Resting HR: \(String(format: "%.0f", point.restingHeartRate)) BPM\n"
+            report += "  - Sleeping HR: \(String(format: "%.0f", point.sleepingHeartRate)) BPM\n"
+            report += "  - Sleep: \(String(format: "%.1f", point.sleepDuration)) hours\n"
+            report += "  - Temp Variance: \(String(format: "%+.2f", point.wristTemperatureVariance))°C\n\n"
+        }
+
+        if !aiSummary.isEmpty {
+            report += "AI-Generated Summary\n---------------------\n\(aiSummary)\n"
+        }
+        
+        return report
+    }
     // Structure for Gemini API response
     struct GeminiResponse: Decodable {
         struct Candidate: Decodable {
@@ -67,15 +137,16 @@ struct HealthChartsView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         // Header
-                        VStack(alignment: .center, spacing: 2) {
-                            Image("Header")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 150)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.horizontal)
-
+                        Button(action: {
+                                self.isShowingQR = true
+                            }) {
+                                Image("Header")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 150)
+                            }
+                            .padding(.horizontal)
+                        
                         // Chart Cards
                         HeartRateCard(data: healthData)
                         SleepCard(data: healthData)
@@ -91,6 +162,9 @@ struct HealthChartsView: View {
                 }
             }
             .navigationBarHidden(true)
+            .sheet(isPresented: $isShowingQR) {
+                QRCodeView(reportString: shareableReport)
+                }
         }
     }
     
@@ -289,7 +363,7 @@ struct SettingsView: View {
 
 
 // MARK: - Data Model
-struct HealthDataPoint: Identifiable {
+struct HealthDataPoint: Identifiable, Codable {
     let id = UUID()
     let date: Date
     let restingHeartRate: Double
