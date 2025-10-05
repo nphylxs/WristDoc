@@ -85,7 +85,7 @@ struct NavBarView: View {
                                 }
                             }
                         }
-                        .padding(.vertical)
+                        .padding(.bottom)
                     }
                     // 4. We remove the old background color from the ScrollView so the gradient shows through.
                 }
@@ -255,8 +255,8 @@ struct ChartCard<Content: View>: View {
             content.frame(minHeight: 200)
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .cornerRadius(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 25, style: .continuous))
+        .cornerRadius(25)
         .padding(.horizontal)
     }
 }
@@ -299,8 +299,8 @@ struct AISummaryCard: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .cornerRadius(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 25, style: .continuous))
+        .cornerRadius(25)
         .padding(.horizontal)
     }
 }
