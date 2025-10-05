@@ -75,7 +75,7 @@ struct NavBarView: View {
                     Label("Profile", systemImage: "person.fill")
                 }
 
-            SettingsView()
+            DoctorView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
@@ -343,7 +343,20 @@ struct ProfileView: View {
 #Preview {
     ProfileView()
 }
-struct SettingsView: View {
+struct Doctor: Identifiable {
+    let id: UUID = UUID()
+    let name: String
+    let specialization: String
+    let headshot: String
+}
+
+let docs = [
+    Doctor(name: "Dr. John Doe", specialization: "Cardiology", headshot: "john.jpg"),
+    Doctor(name: "Dr. Jane Smith", specialization: "Dermatology", headshot: "jane.jpg"),
+    Doctor(name: "Dr. Emily Brown", specialization: "Pediatrics", headshot: "emily.jpg"),
+    Doctor(name: "Dr. David Wilson", specialization: "Neurology", headshot: "david.jpg")
+]
+struct DoctorView: View {
     var body: some View {
         ZStack {
             LinearGradient(
@@ -352,16 +365,49 @@ struct SettingsView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 15) {
+                    Text("Find a Doctor")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.top, 30)
+                        .padding(.bottom, 10)
+
+                    ForEach(docs) { doc in
+                        doc_profiles(doctor: doc)
+                    }
+                }
+                .padding(.bottom)
+            }
             
-            Text("Settings Screen")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
         }
     }
 }
 
-
+struct doc_profiles: View {
+    let doctor: Doctor
+    var body: some View {
+        HStack {
+            VStack(alignment: .center, spacing: 16) {
+                Image(doctor.headshot)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 80, height: 90)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(style: StrokeStyle(lineWidth: 3)))
+                    .shadow(color: .black, radius: 4)
+                Text(doctor.name)
+                    .font(.headline)
+                Text(doctor.specialization)
+            }
+            
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 25, style: .continuous))
+        .padding(.horizontal)
+    }
+}
 // MARK: - Data Model
 struct HealthDataPoint: Identifiable, Codable {
     let id = UUID()
@@ -576,7 +622,7 @@ struct TemperatureCard: View {
 // MARK: - Preview Provider
 struct HealthChartsView_Previews: PreviewProvider {
     static var previews: some View {
-        NavBarView()
+        DoctorView()
             .preferredColorScheme(.dark)
     }
 }
